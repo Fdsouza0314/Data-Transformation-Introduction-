@@ -1,0 +1,250 @@
+---
+title: "Data Transformation"
+author: "Flavia Dsouza"
+date: "2025-11-11"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+
+Visualization is an important tool for generating insight, but it’s rare that you get the data in exactly the right form you need to make the graph you want. Often you’ll need to create some new variables or summaries to answer your questions with your data, or maybe you just want to rename the variables or reorder the observations to make the data a little easier to work with. You’ll learn how to do all that (and more!) in this chapter, which will introduce you to data transformation using the dplyr package and a new dataset on flights that departed from New York City in 2013.
+
+
+## Prerequisites
+
+In this chapter, we’ll focus on the dplyr package, another core member of the tidyverse. We’ll illustrate the key ideas using data from the nycflights13 package and use ggplot2 to help us understand the data.
+
+```{r}
+library(nycflights13)
+library(tidyverse)
+```
+
+## nycflights13
+
+To explore the basic dplyr verbs, we will use nycflights13::flights. This dataset contains all 336,776 flights that departed from New York City in 2013. The data comes from the US Bureau of Transportation Statistics and is documented in ?flights.
+ 
+```{r}
+nycflights13::flights
+```
+
+
+flights is a tibble, a special type of data frame used by the tidyverse to avoid some common gotchas. The most important difference between tibbles and data frames is the way tibbles print; they are designed for large datasets, so they only show the first few rows and only the columns that fit on one screen. There are a few options to see everything. If you’re using RStudio, the most convenient is probably View(flights), which opens an interactive, scrollable, and filterable view.
+
+```{r}
+view(flights)
+```
+
+Otherwise you can use print(flights, width = Inf) to show all columns, or use glimpse():
+
+```{r}
+glimpse(flights)
+```
+
+In both views, the variable names are followed by abbreviations that tell you the type of each variable: <int> is short for integer, <dbl> is short for double (aka real numbers), <chr> for character (aka strings), and <dttm> for date-time. These are important because the operations you can perform on a column depend heavily on its “type.”
+
+## dplyr basics
+
+You’re about to learn the primary dplyr verbs (functions), which will allow you to solve the vast majority of your data manipulation challenges. But before we discuss their individual differences, it’s worth stating what they have in common:
+
+The first argument is always a data frame.
+
+The subsequent arguments typically describe which columns to operate on using the variable names (without quotes).
+
+The output is always a new data frame.
+
+Because each verb does one thing well, solving complex problems will usually require combining multiple verbs, and we’ll do so with the pipe, |>. We’ll discuss the pipe more in Section 3.4, but in brief, the pipe takes the thing on its left and passes it along to the function on its right so that x |> f(y) is equivalent to f(x, y), and x |> f(y) |> g(z) is equivalent to g(f(x, y), z). The easiest way to pronounce the pipe is “then”. That makes it possible to get a sense of the following code even though you haven’t yet learned the details:
+
+```{r}
+flights |>
+  filter(dest == "IAH") |> 
+  group_by(year, month, day) |> 
+  summarize(
+    arr_delay = mean(arr_delay, na.rm = TRUE)
+  )
+```
+# Rows
+
+The most important verbs that operate on rows of a dataset are filter(), which changes which rows are present without changing their order, and arrange(), which changes the order of the rows without changing which are present. Both functions only affect the rows, and the columns are left unchanged. We’ll also discuss distinct() which finds rows with unique values. Unlike arrange() and filter() it can also optionally modify the columns.
+
+## filter()
+
+```{r}
+flights |>
+  filter(dep_delay > 120)
+```
+
+```{r}
+flights |> 
+  filter(month == 1 & day == 1)
+```
+
+## arrange 
+
+arrange() changes the order of the rows based on the value of the columns. It takes a data frame and a set of column names (or more complicated expressions) to order by. If you provide more than one column name, each additional column will be used to break ties in the values of the preceding columns. For example, the following code sorts by the departure time, which is spread over four columns. We get the earliest years first, then within a year, the earliest months, etc.
+
+```{r}
+flights |>
+  arrange(year, month, day, dep_time)
+```
+
+```{r}
+flights |> 
+  arrange(desc(dep_delay))
+```
+
+## distinct()
+
+```{r}
+flights |> 
+  distinct()
+```
+
+```{r}
+flights |> 
+  distinct(origin, dest)
+```
+
+
+```{r}
+flights |> 
+  distinct(origin, dest, .keep_all = TRUE)
+```
+
+```{r}
+flights |>
+  count(origin, dest, sort = TRUE)
+```
+
+# Columns
+
+There are four important verbs that affect the columns without changing the rows: mutate() creates new columns that are derived from the existing columns, select() changes which columns are present, rename() changes the names of the columns, and relocate() changes the positions of the columns.
+
+## mutate()
+
+```{r}
+flights |> 
+  mutate(
+    gain = dep_delay - arr_delay,
+    speed = distance / air_time * 60
+  )
+```
+
+
+## select()
+
+```{r}
+flights |> 
+  select(year, month, day)
+```
+
+
+## rename()
+```{r}
+flights |> 
+  rename(tail_num = tailnum)
+```
+
+## relocate() 
+
+```{r}
+flights |> 
+  relocate(time_hour, air_time)
+```
+
+
+# The pipe
+We’ve shown you simple examples of the pipe above, but its real power arises when you start to combine multiple verbs. For example, imagine that you wanted to find the fastest flights to Houston’s IAH airport: you need to combine filter(), mutate(), select(), and arrange():
+
+```{r}
+flights |> 
+  filter(dest == "IAH") |> 
+  mutate(speed = distance / air_time * 60) |> 
+  select(year:day, dep_time, carrier, flight, speed) |> 
+  arrange(desc(speed))
+```
+
+# Groups
+
+So far you’ve learned about functions that work with rows and columns. dplyr gets even more powerful when you add in the ability to work with groups. In this section, we’ll focus on the most important functions: group_by(), summarize(), and the slice family of functions.
+
+## group_by()
+```{r}
+flights |> 
+  group_by(month)
+```
+
+
+## summarize()
+```{r}
+flights |> 
+  group_by(month) |> 
+  summarize(
+    avg_delay = mean(dep_delay, na.rm = TRUE)
+  )
+```
+
+## The slice_ functions
+```{r}
+flights |> 
+  group_by(dest) |> 
+  slice_max(arr_delay, n = 1) |>
+  relocate(dest)
+```
+
+## Grouping by multiple variables
+
+```{r}
+daily <- flights |>  
+  group_by(year, month, day)
+daily
+```
+
+## Ungrouping
+
+```{r}
+daily |> 
+  ungroup()
+```
+
+## .by
+
+```{r}
+flights |> 
+  summarize(
+    delay = mean(dep_delay, na.rm = TRUE), 
+    n = n(),
+    .by = c(origin, dest)
+  )
+```
+
+# Case study: aggregates and sample size
+
+Whenever you do any aggregation, it’s always a good idea to include a count (n()). That way, you can ensure that you’re not drawing conclusions based on very small amounts of data. We’ll demonstrate this with some baseball data from the Lahman package. Specifically, we will compare what proportion of times a player gets a hit (H) vs. the number of times they try to put the ball in play (AB):
+```{r}
+library(Lahman)
+```
+
+```{r}
+batters <- Lahman::Batting |> 
+  group_by(playerID) |> 
+  summarize(
+    performance = sum(H, na.rm = TRUE) / sum(AB, na.rm = TRUE),
+    n = sum(AB, na.rm = TRUE)
+  )
+batters
+```
+
+```{r}
+batters |> 
+  filter(n > 100) |> 
+  ggplot(aes(x = n, y = performance)) +
+  geom_point(alpha = 1 / 10) + 
+  geom_smooth(se = FALSE)
+```
+#  Summary
+
+In this chapter, you’ve learned the tools that dplyr provides for working with data frames. The tools are roughly grouped into three categories: those that manipulate the rows (like filter() and arrange()), those that manipulate the columns (like select() and mutate()) and those that manipulate groups (like group_by() and summarize()). In this chapter, we’ve focused on these “whole data frame” tools, but you haven’t yet learned much about what you can do with the individual variable. We’ll return to that in the Transform part of the book, where each chapter provides tools for a specific type of variable.
