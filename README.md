@@ -8,3 +8,5 @@ It starts by taking a closer look at the structure of the dataset with simple R 
 Through hands-on examples, the project demonstrates how to filter data based on specific conditions, sort records by time or value, create new calculated columns, and summarize grouped data to uncover trends — like average flight delays by month or destination. It also highlights the importance of using counts (n()) and understanding how grouping can affect summary statistics.
 
 The final section includes a short case study using the Lahman baseball dataset, showing how data size and aggregation impact performance metrics. Overall, this project provides a practical look at how R can be used to turn raw data into meaningful insights — an essential skill for anyone working in data analysis or data science.
+
+Reference: Wickham, H., & Grolemund, G. (2025). Data Transformation (Chapter 3) in R for Data Science (2nd ed.). Retrieved from https://r4ds.hadley.nz/data-transform
