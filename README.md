@@ -1,4 +1,5 @@
-# Data-Transformation-Introduction-
+# Data-Transformation-Using R-studios
+
 Data Transformation in RStudio – NYC Flights 2013
 
 This project explores how to transform and prepare data for analysis using RStudio and the dplyr package from the tidyverse. Working with the nycflights13 dataset — which contains information on over 336,000 flights that departed from New York City in 2013 — the project focuses on cleaning, organizing, and summarizing data to make it easier to understand and visualize.
